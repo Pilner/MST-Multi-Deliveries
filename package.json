@@ -1,0 +1,28 @@
+{
+  "name": "website-boilerplate",
+  "version": "1.0.0",
+  "description": "A website boilerplate for Railey's designs",
+  "main": "app.js",
+  "scripts": {
+    "start": "nodemon app.js",
+    "prod-start": "NODE_ENV=production node ./app.js"
+  },
+  "keywords": [
+    "Website",
+    "Boilerplate",
+    "Node.js",
+    "Express",
+    "EJS"
+  ],
+  "author": "Railey Victuelles",
+  "license": "ISC",
+  "dependencies": {
+    "ejs": "^3.1.8",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "dotenv": "^16.0.3",
+    "nodemon": "^2.0.20"
+  },
+  "type": "module"
+}

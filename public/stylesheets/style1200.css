@@ -1,0 +1,31 @@
+@media (max-width: 1200px) {
+	.container {
+		width: 70%;
+		height: 100%;
+		margin: 0 auto;
+	}
+	.hero-title {
+		color: black;
+		font-size: 5em;
+		font-weight: bold;
+		margin: 1em 0;
+	}
+	.hero-text {
+		color: black;
+		font-size: 1.5em;
+		margin: 1em 0;
+	}
+	.body-title {
+		color: black;
+		font-size: 1.5em;
+		font-weight: bold;
+		margin: 1em 0;
+	
+	}
+	.body-text {
+		color: black;
+		font-size: 1.2em;
+		margin: 1em 0;
+	
+	}
+}

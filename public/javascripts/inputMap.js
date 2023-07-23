@@ -10,7 +10,7 @@ const map = new mapboxgl.Map({
   container: "inputMap", // container ID
   style: "mapbox://styles/mapbox/streets-v12", // style URL
   center: [120.98177916, 14.58678841], // starting position [lng, lat]
-  maxBounds: manila,
+//   maxBounds: manila,
   zoom: 12, // starting zoom
   testMode: true,
 });
@@ -128,3 +128,10 @@ document.getElementById("inputForm").addEventListener("submit", (event) => {
 		alert("Please have at least one warehouse and one delivery.");
 	}
 })
+
+map.addControl(
+	new MapboxGeocoder({
+	accessToken: mapboxgl.accessToken,
+	mapboxgl: mapboxgl
+	})
+);

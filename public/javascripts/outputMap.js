@@ -179,59 +179,59 @@ async function getDurations() {
 }
 
 // Get the longest time and the corresponding path
-(async function getLongestTime() {
-  getDurations().then((data) => {
-    const result = kruskalsAlgorithm(data);
-    let pathTimes = []
-    let maxWeight = 0;
-    let longestPath = [];
+async function getLongestTime() {
+  const duration = await getDurations();
+  const result = kruskalsAlgorithm(duration);
+  let pathTimes = []
+  let maxWeight = 0;
+  let longestPath = [];
 
-    // Helper function to perform DFS
-    function dfs(currentVertex, parentVertex, currentWeight, currentPath) {
-      currentPath.push(currentVertex);
-  
-      // if node has no more children (is a leaf) and is not the first node
-      if (result.mst.filter(edge => edge.u === currentVertex || edge.v === currentVertex).length === 1 && currentVertex !== 0) {
-        pathTimes.push({path: currentPath, time: currentWeight});
-      }
-  
-      if (currentWeight > maxWeight) {
-        maxWeight = currentWeight;
-        longestPath = [...currentPath];
-      }
-  
-      for (const edge of result.mst) {
-        const u = edge.u;
-        const v = edge.v;
-        const weight = edge.weight;
-  
-        if (u === currentVertex && v !== parentVertex) {
-          dfs(v, u, currentWeight + weight, [...currentPath]);
-        } else if (v === currentVertex && u !== parentVertex) {
-          dfs(u, v, currentWeight + weight, [...currentPath]);
-        }
+  // Helper function to perform DFS
+  function dfs(currentVertex, parentVertex, currentWeight, currentPath) {
+    currentPath.push(currentVertex);
+
+    // if node has no more children (is a leaf) and is not the first node
+    if (result.mst.filter(edge => edge.u === currentVertex || edge.v === currentVertex).length === 1 && currentVertex !== 0) {
+      pathTimes.push({path: currentPath, time: currentWeight});
+    }
+
+    if (currentWeight > maxWeight) {
+      maxWeight = currentWeight;
+      longestPath = [...currentPath];
+    }
+
+    for (const edge of result.mst) {
+      const u = edge.u;
+      const v = edge.v;
+      const weight = edge.weight;
+
+      if (u === currentVertex && v !== parentVertex) {
+        dfs(v, u, currentWeight + weight, [...currentPath]);
+      } else if (v === currentVertex && u !== parentVertex) {
+        dfs(u, v, currentWeight + weight, [...currentPath]);
       }
     }
+  }
+
+  // Start DFS from the given vertex
+  dfs(0, -1, 0, []);
+
+  // Convert Seconds to Hours, Minutes and Seconds
+  let hours = Math.floor(maxWeight / 3600);
+  let minutes = Math.floor((maxWeight % 3600) / 60);
+  let seconds = Math.floor((maxWeight % 3600) % 60);
+
+  const longestTimeText = document.getElementById("longestTime");
+  const vehicleNoText = document.getElementById("vehicleNo");
+
+  longestTimeText.innerHTML = `${hours}h ${minutes}m ${seconds}s`;
+  vehicleNoText.innerHTML = `${pathTimes.length}`
+  longestTime = maxWeight;
+  console.log(pathTimes);
   
-    // Start DFS from the given vertex
-    dfs(0, -1, 0, []);
-  
-    // Convert Seconds to Hours, Minutes and Seconds
-    let hours = Math.floor(maxWeight / 3600);
-    let minutes = Math.floor((maxWeight % 3600) / 60);
-    let seconds = Math.floor((maxWeight % 3600) % 60);
-  
-    const longestTimeText = document.getElementById("longestTime");
-    const vehicleNoText = document.getElementById("vehicleNo");
-  
-    longestTimeText.innerHTML = `${hours}h ${minutes}m ${seconds}s`;
-    vehicleNoText.innerHTML = `${pathTimes.length}`
-    longestTime = maxWeight;
-    console.log(pathTimes);
-    
-    return {pathTimes: pathTimes, longestTime: longestTime};
-  });
-})();
+  return {pathTimes: pathTimes, longestTime: longestTime};
+};
+getLongestTime();
 
 
 // Fetch the route geometry from the Mapbox Directions API
@@ -243,7 +243,7 @@ async function getRoutedLine(source, destination) {
 }
 // Draw the route geometry from one point to another on the map
 async function drawRoutedLine(pathTimes) {
-  const color = ["red", "orange", "yellow", "green", "blue", "purple", "pink"]
+  const color = ["#FF0000", "#FFC500", "#FFFF00", "#008000", "#00FFFF", "#0000FF", "#4B0082", "#EE82EE", "#FFC0CB", "#FF00FF"]
 
   const pathObj = {};
   pathTimes.map((pathTime) => {
@@ -339,7 +339,7 @@ async function drawRoutedLine(pathTimes) {
 // Draw lines from one point to another on the map
 async function drawSimpleLine(pathTimes) {
 
-  const color = ["red", "orange", "yellow", "green", "blue", "purple", "pink"]
+  const color = ["#FF0000", "#FFC500", "#FFFF00", "#008000", "#00FFFF", "#0000FF", "#4B0082", "#EE82EE", "#FFC0CB", "#FF00FF"]
 
   if (pathMode === "vhlPath") { // Vehicle Path
     pathTimes.forEach(async (pathTime, index) => {
@@ -416,6 +416,7 @@ straightButton.addEventListener("click", (button) => {
   routedButton.classList.remove("activeButtonA");
   straightButton.classList.add("activeButtonA");
   getLongestTime().then((data) => {
+    console.log(data);
     pathTimes = data.pathTimes;
 
     if (pathMode === "p2p") {

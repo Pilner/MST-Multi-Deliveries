@@ -4,15 +4,12 @@ mapboxgl.accessToken =
 let locations = [];
 let markers = [];
 let longestTime = 0;
+let vehicleCount = 0;
 let mode = "simple";
 let pathMode = "p2p";
 
 const urlParams = new URLSearchParams(window.location.search);
 const dataParam = urlParams.get('data');
-
-const data = JSON.parse(decodeURIComponent(removeEmpty(dataParam) || '{}'));
-
-locations = convertUrl(data);
 
 function removeEmpty(string) {
   return string.replace(/,""/g, '');
@@ -31,11 +28,16 @@ function convertUrl(data) {
   return {warehouse: data.warehouse, delivery: data.delivery};
 }
 
+const params = JSON.parse(decodeURIComponent(removeEmpty(dataParam) || '{}'));
+
+locations = convertUrl(params);
+
 let allLocations = [locations.warehouse, ...locations.delivery];
 
-
+// Manila Maximum Bounds
 const manila = new mapboxgl.LngLatBounds([120.7617187, 14.386892905], [121.053525416, 14.691678901])
-function setupMap(center) {}
+
+// Initialize the map
 const map = new mapboxgl.Map({
   container: "map", // container ID
   style: "mapbox://styles/mapbox/streets-v12", // style URL
@@ -46,6 +48,16 @@ const map = new mapboxgl.Map({
   testMode: true,
 });
 
+// Add search functionality to the map
+map.addControl(
+  new MapboxGeocoder({
+  accessToken: mapboxgl.accessToken,
+  mapboxgl: mapboxgl
+  })
+);
+
+
+// Warehouse and Delivery Markers
 const warehouseMarker = new mapboxgl.Marker({color: "red"})
   .setLngLat(locations.warehouse)
   .addTo(map);
@@ -56,8 +68,7 @@ for (let i = 0; i < locations.delivery.length; i++) {
     .addTo(map));
 }
 
-
-
+// Polyline Geometry Decoder for Routed Lines
 function decodePolyline(encoded) {
   const coordinates = [];
   let index = 0, len = encoded.length;
@@ -66,7 +77,7 @@ function decodePolyline(encoded) {
   while (index < len) {
     let b, shift = 0, result = 0;
     do {
-      b = encoded.charAt(index++).charCodeAt(0) - 63; //finds ascii                                                                                    //and subtract it by 63
+      b = encoded.charAt(index++).charCodeAt(0) - 63; //finds ascii and subtract it by 63
       result |= (b & 0x1f) << shift;
       shift += 5;
     } while (b >= 0x20);
@@ -89,14 +100,6 @@ function decodePolyline(encoded) {
   }
 
   return coordinates;
-}
-
-// Helper function to find the parent of a vertex
-function findParent(parent, i) {
-  if (parent[i] === i) {
-    return i;
-  }
-  return findParent(parent, parent[i]);
 }
 
 // Kruskal's algorithm to find the minimum spanning tree
@@ -125,6 +128,29 @@ function kruskalsAlgorithm(durations) {
   const minimumSpanningTree = [];
   let totalWeight = 0;
 
+  // Helper function to find the parent of a vertex
+  function findParent(parent, i) {
+    if (parent[i] === i) {
+      return i;
+    }
+    return findParent(parent, parent[i]);
+  }
+
+  // Helper function to perform the union of two sets
+  function union(parent, rank, x, y) {
+    const xRoot = findParent(parent, x);
+    const yRoot = findParent(parent, y);
+
+    if (rank[xRoot] < rank[yRoot]) {
+      parent[xRoot] = yRoot;
+    } else if (rank[yRoot] < rank[xRoot]) {
+      parent[yRoot] = xRoot;
+    } else {
+      parent[yRoot] = xRoot;
+      rank[xRoot]++;
+    }
+  }
+
   // Perform Kruskal's algorithm to find the MST
   for (const edge of edges) {
     const uParent = findParent(parent, edge.u);
@@ -141,21 +167,7 @@ function kruskalsAlgorithm(durations) {
   return { mst: minimumSpanningTree, weight: totalWeight };
 }
 
-// Helper function to perform the union of two sets
-function union(parent, rank, x, y) {
-  const xRoot = findParent(parent, x);
-  const yRoot = findParent(parent, y);
-
-  if (rank[xRoot] < rank[yRoot]) {
-    parent[xRoot] = yRoot;
-  } else if (rank[yRoot] < rank[xRoot]) {
-    parent[yRoot] = xRoot;
-  } else {
-    parent[yRoot] = xRoot;
-    rank[xRoot]++;
-  }
-}
-
+// Fetch the durations matrix from the Mapbox Directions API
 async function getDurations() {
   const profile = 'driving';
   const durationCoords = `${locations.warehouse};${locations.delivery.join(';')}`
@@ -166,77 +178,73 @@ async function getDurations() {
   return data.durations;
 }
 
-//get longest time
-async function getLongestTime() {
-  const durations = await getDurations();
-  const result = kruskalsAlgorithm(durations);
-  // console.log(result.mst[0].u);
+// Get the longest time and the corresponding path
+(async function getLongestTime() {
+  getDurations().then((data) => {
+    const result = kruskalsAlgorithm(data);
+    let pathTimes = []
+    let maxWeight = 0;
+    let longestPath = [];
 
-  let maxWeight = 0;
-  let longestPath = [];
-  let pathTimes = []
-
-  // Helper function to perform DFS
-  function dfs(currentVertex, parentVertex, currentWeight, currentPath) {
-    currentPath.push(currentVertex);
-
-    // if node has no more children (is a leaf) and is not the first node
-    if (result.mst.filter(edge => edge.u === currentVertex || edge.v === currentVertex).length === 1 && currentVertex !== 0) {
-      pathTimes.push({path: currentPath, time: currentWeight});
-    }
-
-
-
-    if (currentWeight > maxWeight) {
-      maxWeight = currentWeight;
-      longestPath = [...currentPath];
-    }
-
-    for (const edge of result.mst) {
-      const u = edge.u;
-      const v = edge.v;
-      const weight = edge.weight;
-
-      if (u === currentVertex && v !== parentVertex) {
-        dfs(v, u, currentWeight + weight, [...currentPath]);
-      } else if (v === currentVertex && u !== parentVertex) {
-        dfs(u, v, currentWeight + weight, [...currentPath]);
+    // Helper function to perform DFS
+    function dfs(currentVertex, parentVertex, currentWeight, currentPath) {
+      currentPath.push(currentVertex);
+  
+      // if node has no more children (is a leaf) and is not the first node
+      if (result.mst.filter(edge => edge.u === currentVertex || edge.v === currentVertex).length === 1 && currentVertex !== 0) {
+        pathTimes.push({path: currentPath, time: currentWeight});
+      }
+  
+      if (currentWeight > maxWeight) {
+        maxWeight = currentWeight;
+        longestPath = [...currentPath];
+      }
+  
+      for (const edge of result.mst) {
+        const u = edge.u;
+        const v = edge.v;
+        const weight = edge.weight;
+  
+        if (u === currentVertex && v !== parentVertex) {
+          dfs(v, u, currentWeight + weight, [...currentPath]);
+        } else if (v === currentVertex && u !== parentVertex) {
+          dfs(u, v, currentWeight + weight, [...currentPath]);
+        }
       }
     }
-  }
+  
+    // Start DFS from the given vertex
+    dfs(0, -1, 0, []);
+  
+    // Convert Seconds to Hours, Minutes and Seconds
+    let hours = Math.floor(maxWeight / 3600);
+    let minutes = Math.floor((maxWeight % 3600) / 60);
+    let seconds = Math.floor((maxWeight % 3600) % 60);
+  
+    const longestTimeText = document.getElementById("longestTime");
+    const vehicleNoText = document.getElementById("vehicleNo");
+  
+    longestTimeText.innerHTML = `${hours}h ${minutes}m ${seconds}s`;
+    vehicleNoText.innerHTML = `${pathTimes.length}`
+    longestTime = maxWeight;
+    console.log(pathTimes);
+    
+    return {pathTimes: pathTimes, longestTime: longestTime};
+  });
+})();
 
 
-  // Start DFS from the given vertex
-  dfs(0, -1, 0, []);
-
-  // console.log(result.mst);
-  // console.log(maxWeight);
-
-  //convert seconds to hours, minutes and seconds with 2 decimal places
-  let hours = Math.floor(maxWeight / 3600);
-  let minutes = Math.floor(maxWeight / 60);
-  let seconds = Math.floor(maxWeight - minutes * 60);
-
-  document.getElementById("longestTime").innerHTML = `${hours}h ${minutes}m ${seconds}s`;
-  document.getElementById("vehicleNo").innerHTML = `${pathTimes.length}`
-  return {longestTime: maxWeight, pathTimes};
-}
-let pathTimes = getLongestTime().then((data) => {
-  console.log(data)
-});
-
+// Fetch the route geometry from the Mapbox Directions API
 async function getRoutedLine(source, destination) {
   const lineUrl = `https://api.mapbox.com/directions/v5/mapbox/driving-traffic/${source[0]},${source[1]};${destination[0]},${destination[1]}?access_token=${mapboxgl.accessToken}`;
   const response = await fetch(lineUrl);
   const data = await response.json();
   return data;
 }
-
-
+// Draw the route geometry from one point to another on the map
 async function drawRoutedLine(pathTimes) {
   const color = ["red", "orange", "yellow", "green", "blue", "purple", "pink"]
 
-  // convert [1,2,3,4] to {1:2, 2:3, 3:4}
   const pathObj = {};
   pathTimes.map((pathTime) => {
     const path = pathTime.path;
@@ -245,7 +253,7 @@ async function drawRoutedLine(pathTimes) {
     }
   });
 
-  if (pathMode === "vhlPath") {
+  if (pathMode === "vhlPath") { // Vehicle Path
 
     pathTimes.forEach(async (pathTime, index) => {
 
@@ -285,10 +293,9 @@ async function drawRoutedLine(pathTimes) {
           "line-width": 5,
         },
       })
-
-
     })
-  } else {
+
+  } else { // Point to Point
 
     const durations = await getDurations();
     const result = kruskalsAlgorithm(durations);
@@ -329,11 +336,12 @@ async function drawRoutedLine(pathTimes) {
   }
 };
 
+// Draw lines from one point to another on the map
 async function drawSimpleLine(pathTimes) {
 
   const color = ["red", "orange", "yellow", "green", "blue", "purple", "pink"]
 
-  if (pathMode === "vhlPath") {
+  if (pathMode === "vhlPath") { // Vehicle Path
     pathTimes.forEach(async (pathTime, index) => {
       // Use unique names for each source and layer
       const sourceId = `route-source-${index}`;
@@ -360,7 +368,8 @@ async function drawSimpleLine(pathTimes) {
         },
       })
     })
-  } else {
+
+  } else { // Point to Point
 
     const durations = await getDurations();
     const result = kruskalsAlgorithm(durations);
@@ -402,16 +411,15 @@ const routedButton = document.getElementById("routedButton");
 const p2pButton = document.getElementById("p2pButton");
 const vhlPathButton = document.getElementById("vhlPathButton");
 
-drawSimpleLine();
-
-
 straightButton.addEventListener("click", (button) => {
   mode = "simple";
   routedButton.classList.remove("activeButtonA");
   straightButton.classList.add("activeButtonA");
   getLongestTime().then((data) => {
     pathTimes = data.pathTimes;
+
     if (pathMode === "p2p") {
+
       // remove all layers with name = 'line' from map
       map.getStyle().layers.forEach((layer) => {
         if (layer.id.includes("route-layer")) {
@@ -420,7 +428,9 @@ straightButton.addEventListener("click", (button) => {
         }
       });    
       drawSimpleLine(pathTimes);
+
     } else {
+
       // remove all layers with name = 'line' from map
       map.getStyle().layers.forEach((layer) => {
         if (layer.id.includes("route-layer")) {
@@ -429,6 +439,7 @@ straightButton.addEventListener("click", (button) => {
         }
       });    
       drawSimpleLine(pathTimes);
+
     }
   });
 });
@@ -441,7 +452,9 @@ routedButton.addEventListener("click", (button) => {
 
   getLongestTime().then((data) => {
     pathTimes = data.pathTimes;
+
     if (pathMode === "p2p") {
+
       // remove all layers with name = 'line' from map
       map.getStyle().layers.forEach((layer) => {
         if (layer.id.includes("route-layer")) {
@@ -450,15 +463,18 @@ routedButton.addEventListener("click", (button) => {
         }
       });    
       drawRoutedLine(pathTimes);
+
     } else {
+
       // remove all layers with name = 'line' from map
       map.getStyle().layers.forEach((layer) => {
         if (layer.id.includes("route-layer")) {
           map.removeLayer(layer.id);
           map.removeSource(layer.source);
         }
-      });    
+      });
       drawRoutedLine(pathTimes);
+
     }
   });
 });
@@ -469,7 +485,9 @@ p2pButton.addEventListener("click", (button) => {
   p2pButton.classList.add("activeButtonA");
   getLongestTime().then((data) => {
     pathTimes = data.pathTimes;
+
     if (mode === "simple") {
+
       // remove all layers with name = 'line' from map
       map.getStyle().layers.forEach((layer) => {
         if (layer.id.includes("route-layer")) {
@@ -478,7 +496,9 @@ p2pButton.addEventListener("click", (button) => {
         }
       });    
       drawSimpleLine(pathTimes);
+
     } else {
+
       // remove all layers with name = 'line' from map
       map.getStyle().layers.forEach((layer) => {
         if (layer.id.includes("route-layer")) {
@@ -487,6 +507,7 @@ p2pButton.addEventListener("click", (button) => {
         }
       });    
       drawRoutedLine(pathTimes);
+
     }
   });
 });
@@ -497,6 +518,7 @@ vhlPathButton.addEventListener("click", (button) => {
   vhlPathButton.classList.add("activeButtonA");
   getLongestTime().then((data) => {
     pathTimes = data.pathTimes;
+
     if (mode === "simple") {
       // remove all layers with name = 'line' from map
       map.getStyle().layers.forEach((layer) => {
@@ -522,10 +544,5 @@ vhlPathButton.addEventListener("click", (button) => {
 });
 
 
-
-map.addControl(
-  new MapboxGeocoder({
-  accessToken: mapboxgl.accessToken,
-  mapboxgl: mapboxgl
-  })
-);
+// Initialize the map with simple, point-to-point lines
+drawSimpleLine();

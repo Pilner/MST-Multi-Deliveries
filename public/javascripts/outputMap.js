@@ -1,15 +1,11 @@
 mapboxgl.accessToken =
   "pk.eyJ1IjoicGlsbmVyIiwiYSI6ImNsanBxczIzcTAxazQzZm5xaHF3OHNrOTMifQ.k7dqkEdQZZ-l4gBWwZh46A";
 
-// navigator.geolocation.getCurrentPosition(successLocation, errorLocation, {enableHighAccuracy: true});
-
-// function successLocation(position) {
-//   console.log(position)
-//   setupMap([position.coords.longitude, position.coords.latitude]);
-// }
 let locations = [];
 let markers = [];
 let longestTime = 0;
+let mode = "simple";
+let pathMode = "p2p";
 
 const urlParams = new URLSearchParams(window.location.search);
 const dataParam = urlParams.get('data');
@@ -160,39 +156,6 @@ function union(parent, rank, x, y) {
   }
 }
 
-// function findLongestPathFromVertex(vertex) {
-//   let maxWeight = 0;
-//   let longestPath = [];
-
-//   // Helper function to perform DFS
-//   function dfs(currentVertex, parentVertex, currentWeight, currentPath) {
-//     currentPath.push(currentVertex);
-
-//     if (currentWeight > maxWeight) {
-//       maxWeight = currentWeight;
-//       longestPath = [...currentPath];
-//     }
-
-//     for (const edge of result.mst) {
-//       const u = edge.u;
-//       const v = edge.v;
-//       const weight = edge.weight;
-
-//       if (u === currentVertex && v !== parentVertex) {
-//         dfs(v, u, currentWeight + weight, [...currentPath]);
-//       } else if (v === currentVertex && u !== parentVertex) {
-//         dfs(u, v, currentWeight + weight, [...currentPath]);
-//       }
-//     }
-//   }
-
-//   // Start DFS from the given vertex
-//   dfs(vertex, -1, 0, []);
-
-//   return {longestPath, maxWeight};
-// }
-
-
 async function getDurations() {
   const profile = 'driving';
   const durationCoords = `${locations.warehouse};${locations.delivery.join(';')}`
@@ -270,86 +233,174 @@ async function getRoutedLine(source, destination) {
 }
 
 
-async function drawRoutedLine() {
-  const durations = await getDurations();
-  const result = kruskalsAlgorithm(durations);
-
+async function drawRoutedLine(pathTimes) {
   const color = ["red", "orange", "yellow", "green", "blue", "purple", "pink"]
 
-  result.mst.forEach(async (edge, index) => {
-    const source = allLocations[edge.u];
-    const destination = allLocations[edge.v];
+  // convert [1,2,3,4] to {1:2, 2:3, 3:4}
+  const pathObj = {};
+  pathTimes.map((pathTime) => {
+    const path = pathTime.path;
+    for (let i = 0; i < path.length - 1; i++) {
+      pathObj[path[i]] = path[i + 1];
+    }
+  });
 
-    const data = await getRoutedLine(source, destination);
-    const routeGeometry = data.routes[0].geometry;
-    const routedCoords = decodePolyline(routeGeometry);
+  if (pathMode === "vhlPath") {
 
-    // Use unique names for each source and layer
-    const sourceId = `route-source-${index}`;
-    const layerId = `route-layer-${index}`;
+    pathTimes.forEach(async (pathTime, index) => {
 
-    map.addSource(sourceId, {
-      type: "geojson",
-      data: {
-        type: "Feature",
-        geometry: {
-          type: "LineString",
-          coordinates: routedCoords,
+      const path = pathTime.path;
+      const routedCoords = [];
+
+      for (let i = 0; i < path.length - 1; i++) {
+        const source = allLocations[path[i]];
+        const destination = allLocations[path[i + 1]];
+        const data = await getRoutedLine(source, destination);
+        const routeGeometry = data.routes[0].geometry;
+        const coords = decodePolyline(routeGeometry);
+        routedCoords.push(...coords);
+      }
+
+      // Use unique names for each source and layer
+      const sourceId = `route-source-${index}`;
+      const layerId = `route-layer-${index}`;
+
+      map.addSource(sourceId, {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          geometry: {
+            type: "LineString",
+            coordinates: routedCoords,
+          },
         },
-      },
-    });
+      });
 
-    map.addLayer({
-      id: layerId,
-      type: "line",
-      source: sourceId,
-      paint: {
-        "line-color": color[index],
-        "line-width": 5,
-      },
+      map.addLayer({
+        id: layerId,
+        type: "line",
+        source: sourceId,
+        paint: {
+          "line-color": color[index],
+          "line-width": 5,
+        },
+      })
+
+
     })
-  })
+  } else {
+
+    const durations = await getDurations();
+    const result = kruskalsAlgorithm(durations);
+
+    result.mst.forEach(async (edge, index) => {
+      const source = allLocations[edge.u];
+      const destination = allLocations[edge.v];
+
+      const data = await getRoutedLine(source, destination);
+      const routeGeometry = data.routes[0].geometry;
+      const routedCoords = decodePolyline(routeGeometry);
+
+      // Use unique names for each source and layer
+      const sourceId = `route-source-${index}`;
+      const layerId = `route-layer-${index}`;
+
+      map.addSource(sourceId, {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          geometry: {
+            type: "LineString",
+            coordinates: routedCoords,
+          },
+        },
+      });
+
+      map.addLayer({
+        id: layerId,
+        type: "line",
+        source: sourceId,
+        paint: {
+          "line-color": color[index],
+          "line-width": 5,
+        },
+      })
+    })
+  }
 };
 
-async function drawSimpleLine() {
-  const durations = await getDurations();
-  const result = kruskalsAlgorithm(durations);
+async function drawSimpleLine(pathTimes) {
 
   const color = ["red", "orange", "yellow", "green", "blue", "purple", "pink"]
 
-  result.mst.forEach(async (edge, index) => {
-    const source = allLocations[edge.u];
-    const destination = allLocations[edge.v];
+  if (pathMode === "vhlPath") {
+    pathTimes.forEach(async (pathTime, index) => {
+      // Use unique names for each source and layer
+      const sourceId = `route-source-${index}`;
+      const layerId = `route-layer-${index}`;
 
-    // Use unique names for each source and layer
-    const sourceId = `route-source-${index}`;
-    const layerId = `route-layer-${index}`;
-
-    map.addSource(sourceId, {
-      type: "geojson",
-      data: {
-        type: "Feature",
-        geometry: {
-          type: "LineString",
-          coordinates: [source, destination],
+      map.addSource(sourceId, {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          geometry: {
+            type: "LineString",
+            coordinates: pathTime.path.map((vertex) => allLocations[vertex]),
+          },
         },
-      },
-    });
+      });
 
-    map.addLayer({
-      id: layerId,
-      type: "line",
-      source: sourceId,
-      paint: {
-        "line-color": color[index],
-        "line-width": 5,
-      },
+      map.addLayer({
+        id: layerId,
+        type: "line",
+        source: sourceId,
+        paint: {
+          "line-color": color[index],
+          "line-width": 5,
+        },
+      })
     })
-  })
+  } else {
+
+    const durations = await getDurations();
+    const result = kruskalsAlgorithm(durations);
+
+    result.mst.forEach(async (edge, index) => {
+      const source = allLocations[edge.u];
+      const destination = allLocations[edge.v];
+
+      // Use unique names for each source and layer
+      const sourceId = `route-source-${index}`;
+      const layerId = `route-layer-${index}`;
+
+      map.addSource(sourceId, {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          geometry: {
+            type: "LineString",
+            coordinates: [source, destination],
+          },
+        },
+      });
+
+      map.addLayer({
+        id: layerId,
+        type: "line",
+        source: sourceId,
+        paint: {
+          "line-color": color[index],
+          "line-width": 5,
+        },
+      })
+    })
+  }
 };
 
 const straightButton = document.getElementById("straightButton");
 const routedButton = document.getElementById("routedButton");
+const p2pButton = document.getElementById("p2pButton");
+const vhlPathButton = document.getElementById("vhlPathButton");
 
 drawSimpleLine();
 
@@ -358,30 +409,119 @@ straightButton.addEventListener("click", (button) => {
   mode = "simple";
   routedButton.classList.remove("activeButtonA");
   straightButton.classList.add("activeButtonA");
-  // remove all layers with name = 'line' from map
-  map.getStyle().layers.forEach((layer) => {
-    if (layer.id.includes("route-layer")) {
-      map.removeLayer(layer.id);
-      map.removeSource(layer.source)
+  getLongestTime().then((data) => {
+    pathTimes = data.pathTimes;
+    if (pathMode === "p2p") {
+      // remove all layers with name = 'line' from map
+      map.getStyle().layers.forEach((layer) => {
+        if (layer.id.includes("route-layer")) {
+          map.removeLayer(layer.id);
+          map.removeSource(layer.source);
+        }
+      });    
+      drawSimpleLine(pathTimes);
+    } else {
+      // remove all layers with name = 'line' from map
+      map.getStyle().layers.forEach((layer) => {
+        if (layer.id.includes("route-layer")) {
+          map.removeLayer(layer.id);
+          map.removeSource(layer.source);
+        }
+      });    
+      drawSimpleLine(pathTimes);
     }
   });
-  drawSimpleLine();
 });
 
 routedButton.addEventListener("click", (button) => {
   mode = "routed";
+
   straightButton.classList.remove("activeButtonA");
   routedButton.classList.add("activeButtonA");
-  // remove all layers with name = 'line' from map
-  map.getStyle().layers.forEach((layer) => {
-    if (layer.id.includes("route-layer")) {
-      map.removeLayer(layer.id);
-      map.removeSource(layer.source)
+
+  getLongestTime().then((data) => {
+    pathTimes = data.pathTimes;
+    if (pathMode === "p2p") {
+      // remove all layers with name = 'line' from map
+      map.getStyle().layers.forEach((layer) => {
+        if (layer.id.includes("route-layer")) {
+          map.removeLayer(layer.id);
+          map.removeSource(layer.source);
+        }
+      });    
+      drawRoutedLine(pathTimes);
+    } else {
+      // remove all layers with name = 'line' from map
+      map.getStyle().layers.forEach((layer) => {
+        if (layer.id.includes("route-layer")) {
+          map.removeLayer(layer.id);
+          map.removeSource(layer.source);
+        }
+      });    
+      drawRoutedLine(pathTimes);
     }
   });
-  
-  drawRoutedLine();
 });
+
+p2pButton.addEventListener("click", (button) => {
+  pathMode = "p2p";
+  vhlPathButton.classList.remove("activeButtonA");
+  p2pButton.classList.add("activeButtonA");
+  getLongestTime().then((data) => {
+    pathTimes = data.pathTimes;
+    if (mode === "simple") {
+      // remove all layers with name = 'line' from map
+      map.getStyle().layers.forEach((layer) => {
+        if (layer.id.includes("route-layer")) {
+          map.removeLayer(layer.id);
+          map.removeSource(layer.source);
+        }
+      });    
+      drawSimpleLine(pathTimes);
+    } else {
+      // remove all layers with name = 'line' from map
+      map.getStyle().layers.forEach((layer) => {
+        if (layer.id.includes("route-layer")) {
+          map.removeLayer(layer.id);
+          map.removeSource(layer.source);
+        }
+      });    
+      drawRoutedLine(pathTimes);
+    }
+  });
+});
+
+vhlPathButton.addEventListener("click", (button) => {
+  pathMode = "vhlPath";
+  p2pButton.classList.remove("activeButtonA");
+  vhlPathButton.classList.add("activeButtonA");
+  getLongestTime().then((data) => {
+    pathTimes = data.pathTimes;
+    if (mode === "simple") {
+      // remove all layers with name = 'line' from map
+      map.getStyle().layers.forEach((layer) => {
+        if (layer.id.includes("route-layer")) {
+          map.removeLayer(layer.id);
+          map.removeSource(layer.source);
+        }
+      });
+
+    drawSimpleLine(pathTimes);
+    } else {
+      // remove all layers with name = 'line' from map
+      map.getStyle().layers.forEach((layer) => {
+        if (layer.id.includes("route-layer")) {
+          map.removeLayer(layer.id);
+          map.removeSource(layer.source);
+        }
+      });
+
+      drawRoutedLine(pathTimes);
+    }
+  });
+});
+
+
 
 map.addControl(
   new MapboxGeocoder({

@@ -300,12 +300,26 @@ div.nav-font a {
   border-bottom: 1px solid rgba(0,0,0,0.2);
 }
 
-#theMap .modesPart p {
+#theMap .mstModesPart {
+  border-bottom: 1px solid rgba(0,0,0,0.2);
+}
+
+#theMap .mstModesPart p {
   text-align: center;
   margin-bottom: 0.5em;
 }
 
-#theMap .modesPart > div {
+#theMap .mstModesPart > div {
+  display: flex;
+  justify-content: space-evenly;
+}
+
+#theMap .pathModesPart p {
+  text-align: center;
+  margin-bottom: 0.5em;
+}
+
+#theMap .pathModesPart > div {
   display: flex;
   justify-content: space-evenly;
 }

@@ -6,9 +6,9 @@ A custom website boilerplate to start coding a website/app instantly.
 
 *Note: Make sure you have a [Node.js](https://nodejs.org/en/) installed. To check, run `node -v` in your terminal*
 
-1. Click `Use this template` or clone into a local directory
+1. Clone this repository into a local directory
 ```
-git clone https://github.com/Pilner/Website-Boilerplate
+git clone https://github.com/Pilner/MST-Multi-Deliveries.git
 ```
 2. Download all the dependencies and packages needed in this repository
 ```

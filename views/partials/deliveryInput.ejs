@@ -1,10 +1,6 @@
 <div>
 
-  <% if (index == "1") { %>
-    <input type="text" class="delivery" name="delivery" placeholder="Location #<%= index %> Address Coordinates" data-index=<%= index %> readonly required >
-  <% } else { %>
-    <input type="text" class="delivery" name="delivery" placeholder="Location #<%= index %> Address Coordinates" data-index=<%= index %> readonly >
-  <% } %>
+  <input type="text" class="delivery" name="delivery" placeholder="Location #<%= index %> Address Coordinates" data-index=<%= index %> readonly >
 
   <%- include("blueMarker", {index: index }) %>
 

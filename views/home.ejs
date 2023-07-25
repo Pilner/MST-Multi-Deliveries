@@ -96,12 +96,9 @@
                 <div class="dlInput">
                   <label for="delivery">Delivery Locations</label>
                   <%- include("partials/deliveryInput", {index: 1}) %>
-                  <%- include("partials/deliveryInput", {index: 2}) %>
-                  <%- include("partials/deliveryInput", {index: 3}) %>
-                  <%- include("partials/deliveryInput", {index: 4}) %>
-                  <%- include("partials/deliveryInput", {index: 5}) %>
                 </div>
                 <div class="submitDiv">
+                  <button class="buttonA" id="addButton" type="button">Add</button>
                   <button class="buttonA" type="submit">Generate</button>
                 </div>
               </form>
@@ -115,20 +112,6 @@
         </div>
       </div>
     </section>
-
-
-    <!-- <section id="theMap">
-      <div id='map'>
-        <div class="deleteMarkers">
-          <div>
-            <button onclick="removeMarkers()"><i class="fa-solid fa-circle-xmark fa-2xl"></i></button>
-          </div>
-        </div>
-      </div>
-    </section> -->
-
-
-
 
   </body>
 </html>

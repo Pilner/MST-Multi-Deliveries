@@ -211,10 +211,18 @@ async function getLongestTime() {
 
   let maxWeight = 0;
   let longestPath = [];
+  let pathTimes = []
 
   // Helper function to perform DFS
   function dfs(currentVertex, parentVertex, currentWeight, currentPath) {
     currentPath.push(currentVertex);
+
+    // if node has no more children (is a leaf) and is not the first node
+    if (result.mst.filter(edge => edge.u === currentVertex || edge.v === currentVertex).length === 1 && currentVertex !== 0) {
+      pathTimes.push({path: currentPath, time: currentWeight});
+    }
+
+
 
     if (currentWeight > maxWeight) {
       maxWeight = currentWeight;
@@ -234,11 +242,12 @@ async function getLongestTime() {
     }
   }
 
+
   // Start DFS from the given vertex
   dfs(0, -1, 0, []);
 
-  console.log(result.mst);
-  console.log(maxWeight);
+  // console.log(result.mst);
+  // console.log(maxWeight);
 
   //convert seconds to hours, minutes and seconds with 2 decimal places
   let hours = Math.floor(maxWeight / 3600);
@@ -246,10 +255,12 @@ async function getLongestTime() {
   let seconds = Math.floor(maxWeight - minutes * 60);
 
   document.getElementById("longestTime").innerHTML = `${hours}h ${minutes}m ${seconds}s`;
-  return maxWeight;
+  document.getElementById("vehicleNo").innerHTML = `${pathTimes.length}`
+  return {longestTime: maxWeight, pathTimes};
 }
-
-getLongestTime();
+let pathTimes = getLongestTime().then((data) => {
+  console.log(data)
+});
 
 async function getRoutedLine(source, destination) {
   const lineUrl = `https://api.mapbox.com/directions/v5/mapbox/driving-traffic/${source[0]},${source[1]};${destination[0]},${destination[1]}?access_token=${mapboxgl.accessToken}`;

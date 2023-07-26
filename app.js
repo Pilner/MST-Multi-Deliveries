@@ -20,12 +20,30 @@ app.get("/", (req, res) => {
 		res.render("errorpage");
 		console.log(err);
 	}
-})
+});
 
 app.get("/map", (req, res) => {
 	try {
 		const data = JSON.parse(decodeURIComponent(req.query.data || "{}"));
 		res.render("mapPage", {data: data});
+	} catch (err) {
+		res.render("errorpage");
+		console.log(err);
+	}
+});
+
+app.get("/about", (req, res) => {
+	try {
+		res.render("about");
+	} catch (err) {
+		res.render("errorpage");
+		console.log(err);
+	}
+});
+
+app.get("/contact", (req, res) => {
+	try {
+		res.render("contact");
 	} catch (err) {
 		res.render("errorpage");
 		console.log(err);

@@ -43,7 +43,7 @@ const map = new mapboxgl.Map({
   style: "mapbox://styles/mapbox/streets-v12", // style URL
   // style: "mapbox://styles/mapbox/satellite-v9", // style URL SATELLITE
   center: locations.warehouse, // starting position [lng, lat]
-  // maxBounds: manila,
+  maxBounds: manila,
   zoom: 14, // starting zoom
   testMode: true,
 });

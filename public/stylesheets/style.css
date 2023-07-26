@@ -1,116 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap");
+@import url('globals.css');
 
-@import "style1200.css";
-@import "style1024.css";
-@import "style768.css";
-@import "style480.css";
-
-/* VARIABLES */
-:root {
-  --dark-bg: #343434;
-  --white: #DFDFDF;
-}
-/* VARIABLES */
-
-/* SETUP */
-* {
-	margin: 0;
-	padding: 0;
-}
-
-body::-webkit-scrollbar {
-  display: none;
-}
-
-button {
-  background: none;
-	color: inherit;
-	border: none;
-	padding: 0;
-	font: inherit;
-	cursor: pointer;
-	outline: inherit; 
-}
-
-body {
-	font-family: "Nunito";
-  /* overflow: hidden; */
-}
-
-a {
-	text-decoration: none;
-}
-
-input[type="text"] {
-  border: 1px solid rgba(0,0,0,0.5);
-  border-radius: 1vmin;
-  padding: 0.5rem;
-}
-/* SETUP */
-
-/* GENERAL */
-.containerA {
-	width: 80%;
-	height: 100%;
-	margin: 0 auto;
-}
-
-.heroPage-title {
-	color: black;
-	font-size: 5em;
-	font-weight: bold;
-}
-.heroPage-text {
-	color: black;
-	font-size: 1.5em;
-	margin: 1em 0;
-}
-.body-title {
-	color: black;
-	font-size: 1.5em;
-	font-weight: bold;
-
-}
-.body-text {
-	color: black;
-	font-size: 1.2em;
-}
-
-.section-title {
-  color: black;
-  font-size: 3em;
-  font-weight: bold;
-}
-
-.alt-section-title {
-  color: var(--white);
-  font-size: 3em;
-  font-weight: bold;
-}
-
-.buttonA {
-	padding: 10px 25px;
-	color: black;
-	background: none;
-	font-size: 16px;
-	font-weight: 400;
-	border: 1px solid black;
-	border-radius: 5px;
-	margin: 0 .5em;
-	cursor: pointer;
-
-}
-.buttonA:hover {
-	background-color: #5E88A0;
-  border: 1px solid #5E88A0;
-	color: white;
-	transition: .1s;
-}
-
-.buttonA:not(:hover) {
-	transition: .1s;
-}
-/* GENERAL */
 
 /* NAVBAR */
 .navbar {
@@ -330,3 +219,49 @@ div.nav-font a {
 	color: white;
   pointer-events: none;
 }
+
+
+/* ABOUT */
+#aboutPage {
+  /* min-height: 92vh; */
+}
+
+#aboutPage p.display-2 {
+  font-weight: 600;
+}
+
+#aboutPage .containerA > div {
+  border: 2px solid black;
+  background-color: #E3FCFF;
+  border-radius: 3vmin;
+  margin: 2rem 0;
+  width: 100%;
+  align-items: center;
+  padding: 3rem;
+}
+/* ABOUT */
+
+
+/* CONTACT */
+#contactPage p.display-2 {
+  font-weight: 600;
+}
+
+#contactPage .containerA > div {
+  border: 2px solid black;
+  background-color: #E3FCFF;
+  border-radius: 3vmin;
+  margin: 2rem 0;
+  width: 100%;
+  align-items: center;
+  padding: 3rem;
+}
+
+
+#contactPage .contactDetails {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 1em 0;
+}
+/* CONTACT */

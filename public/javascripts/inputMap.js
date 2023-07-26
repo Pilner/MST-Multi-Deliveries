@@ -43,45 +43,48 @@ map.on("click", (e) => {
 			input.value = `${point[0]}, ${point[1]}`;
 			marker.setLngLat(point).addTo(map);
 			whMarker = marker;
+			console.log(`Warehouse: ${point}`);
 		}
 
 		((marker) => {
 			marker.on("dragend", () => {
 				point = [marker.getLngLat().lng, marker.getLngLat().lat];
+				console.log(`Warehouse: ${point}`);
 				input.value = `${point[0]}, ${point[1]}`;
 			});
 		})(marker);
 	
 
 	} else {
-		inputs = document.getElementsByClassName("delivery");
+		let inputs = document.getElementsByClassName("delivery");
 		marker = new mapboxgl.Marker({draggable: true});
 
 		
-		// for (let input of inputs) {
 			
-			let pointAlreadyExists = locations.some((obj) => {
-				console.log(index)
-				return obj.index === index;
-			})
-			
-			
-			if (!pointAlreadyExists) {
-				let point = [e.lngLat.lng, e.lngLat.lat];
-				let index = delMarker.push(marker) - 1;
-				locations.push({point: point, mode: mode, index: index});
-				// input.value = `${point[0]}, ${point[1]}`;
-				marker.setLngLat(point).addTo(map);
-				inputs[index].value = `${point[0]}, ${point[1]}`;
+		let pointAlreadyExists = locations.some((obj) => {
+			return obj.index === index;
+		})
+		
+		
+		if (!pointAlreadyExists) {
+			let point = [e.lngLat.lng, e.lngLat.lat];
+			let index = delMarker.push(marker) - 1;
+			locations.push({point: point, mode: mode, index: index});
+			// input.value = `${point[0]}, ${point[1]}`;
+			marker.setLngLat(point).addTo(map);
+			for (let location of locations) {
+				if (location.index === index) {
+					inputs[index].value = `${point[0]}, ${point[1]}`;
+				}
 			}
-		// }
+		}
 		
 		((marker) => {
 			marker.on("dragend", () => {
 				point = [marker.getLngLat().lng, marker.getLngLat().lat];
 
 				let index = delMarker.indexOf(marker);
-				console.log(index);
+				console.log(`Delivery: ${point}`);
 				inputs[index].value = `${point[0]}, ${point[1]}`;
 			});
 		})(marker);
@@ -109,15 +112,21 @@ selectors.forEach((selector) => {
 });		
 
 
-let required = [document.querySelector("#warehouse"), document.querySelectorAll(".delivery")[0]];
+let required = [document.querySelector("#warehouse"), document.querySelectorAll(".delivery")];
 
 function checkRequired() {
-	for (let input of required) {
-		if (input.value === "") {
-			return false;
+	// true if warehouse is filled and one of the deliveries is filled
+	console.log(required);
+	let warehouse = required[0].value;
+	let deliveries = required[1];
+	let filled = false;
+	for (let delivery of deliveries) {
+		if (delivery.value) {
+			filled = true;
+			break;
 		}
 	}
-	return true;
+	return warehouse && filled;	
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -166,22 +175,22 @@ document.addEventListener('DOMContentLoaded', () => {
 		container.appendChild(newDiv1);
 
 		const selectors = document.querySelectorAll("svg");
-		console.log(selectors);
 
-		// make newly created variables have the same functionality as the old ones
 		selectors.forEach((selector) => {
 			selector.addEventListener("click", () => {
 				selector.setAttribute("data-selected", "true");
 				mode = selector.getAttribute("data-mode");
 				index = (selector.getAttribute("data-index") - 1) || 0;
+				console.log(index);
 				selectors.forEach((check) => {
 					if (check !== selector) {
 						check.setAttribute("data-selected", "false");
 					}
 				})
 			});
-		});
-			
+		});		
+		// required = [document.querySelector("#warehouse"), document.querySelectorAll(".delivery")]
+	
 	});
 
 

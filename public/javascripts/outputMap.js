@@ -12,6 +12,7 @@ const urlParams = new URLSearchParams(window.location.search);
 const dataParam = urlParams.get('data');
 
 function removeEmpty(string) {
+  console.log(string);  
   return string.replace(/,""/g, '');
 }
 
@@ -55,7 +56,6 @@ map.addControl(
   mapboxgl: mapboxgl
   })
 );
-
 
 // Warehouse and Delivery Markers
 const warehouseMarker = new mapboxgl.Marker({color: "red"})
@@ -184,9 +184,8 @@ async function getLongestTime() {
   const result = kruskalsAlgorithm(duration);
   let pathTimes = []
   let maxWeight = 0;
-  let longestPath = [];
 
-  // Helper function to perform DFS
+  // DFS Function
   function dfs(currentVertex, parentVertex, currentWeight, currentPath) {
     currentPath.push(currentVertex);
 
@@ -197,7 +196,6 @@ async function getLongestTime() {
 
     if (currentWeight > maxWeight) {
       maxWeight = currentWeight;
-      longestPath = [...currentPath];
     }
 
     for (const edge of result.mst) {
@@ -227,11 +225,12 @@ async function getLongestTime() {
   longestTimeText.innerHTML = `${hours}h ${minutes}m ${seconds}s`;
   vehicleNoText.innerHTML = `${pathTimes.length}`
   longestTime = maxWeight;
-  console.log(pathTimes);
   
   return {pathTimes: pathTimes, longestTime: longestTime};
 };
-getLongestTime();
+getLongestTime().then((data) => {
+  console.table(data);
+});
 
 
 // Fetch the route geometry from the Mapbox Directions API
@@ -243,7 +242,7 @@ async function getRoutedLine(source, destination) {
 }
 // Draw the route geometry from one point to another on the map
 async function drawRoutedLine(pathTimes) {
-  const color = ["#FF0000", "#FFC500", "#FFFF00", "#008000", "#00FFFF", "#0000FF", "#4B0082", "#EE82EE", "#FFC0CB", "#FF00FF"]
+  const color = ["rgba(255, 0, 0, 0.9)", "rgba(255, 197, 0, 0.9)", "rgba(255, 255, 0, 0.9)", "rgba(0, 128, 0, 0.9)", "rgba(0, 255, 255, 0.9)", "rgba(0, 0, 255, 0.9)", "rgba(75, 0, 130, 0.9)", "rgba(238, 130, 238, 0.9)", "rgba(255, 192, 203, 0.9)", "rgba(255, 0, 255, 0.9)"]
 
   const pathObj = {};
   pathTimes.map((pathTime) => {
@@ -339,7 +338,8 @@ async function drawRoutedLine(pathTimes) {
 // Draw lines from one point to another on the map
 async function drawSimpleLine(pathTimes) {
 
-  const color = ["#FF0000", "#FFC500", "#FFFF00", "#008000", "#00FFFF", "#0000FF", "#4B0082", "#EE82EE", "#FFC0CB", "#FF00FF"]
+  const color = ["rgba(255, 0, 0, 0.9)", "rgba(255, 197, 0, 0.9)", "rgba(255, 255, 0, 0.9)", "rgba(0, 128, 0, 0.9)", "rgba(0, 255, 255, 0.9)", "rgba(0, 0, 255, 0.9)", "rgba(75, 0, 130, 0.9)", "rgba(238, 130, 238, 0.9)", "rgba(255, 192, 203, 0.9)", "rgba(255, 0, 255, 0.9)"]
+
 
   if (pathMode === "vhlPath") { // Vehicle Path
     pathTimes.forEach(async (pathTime, index) => {
@@ -416,7 +416,6 @@ straightButton.addEventListener("click", (button) => {
   routedButton.classList.remove("activeButtonA");
   straightButton.classList.add("activeButtonA");
   getLongestTime().then((data) => {
-    console.log(data);
     pathTimes = data.pathTimes;
 
     if (pathMode === "p2p") {

@@ -8,14 +8,16 @@ let vehicleCount = 0;
 let mode = "simple";
 let pathMode = "p2p";
 
+// Get the data from the URL
 const urlParams = new URLSearchParams(window.location.search);
 const dataParam = urlParams.get('data');
 
+// Clean URL from excess values
 function removeEmpty(string) {
   console.log(string);  
   return string.replace(/,""/g, '');
 }
-
+// Fix URL to be readable by the program
 function convertUrl(data) {
   data.warehouse = data.warehouse.split(', ');
   data.warehouse[0] = parseFloat(data.warehouse[0]);
@@ -185,7 +187,7 @@ async function getLongestTime() {
   let pathTimes = []
   let maxWeight = 0;
 
-  // DFS Function
+  // Depth-First Search Function
   function dfs(currentVertex, parentVertex, currentWeight, currentPath) {
     currentPath.push(currentVertex);
 
@@ -198,6 +200,7 @@ async function getLongestTime() {
       maxWeight = currentWeight;
     }
 
+    // Recursively call DFS on the children of the current vertex
     for (const edge of result.mst) {
       const u = edge.u;
       const v = edge.v;
@@ -214,22 +217,23 @@ async function getLongestTime() {
   // Start DFS from the given vertex
   dfs(0, -1, 0, []);
 
-  // Convert Seconds to Hours, Minutes and Seconds
-  let hours = Math.floor(maxWeight / 3600);
-  let minutes = Math.floor((maxWeight % 3600) / 60);
-  let seconds = Math.floor((maxWeight % 3600) % 60);
-
-  const longestTimeText = document.getElementById("longestTime");
-  const vehicleNoText = document.getElementById("vehicleNo");
-
-  longestTimeText.innerHTML = `${hours}h ${minutes}m ${seconds}s`;
-  vehicleNoText.innerHTML = `${pathTimes.length}`
   longestTime = maxWeight;
   
   return {pathTimes: pathTimes, longestTime: longestTime};
 };
 getLongestTime().then((data) => {
-  console.table(data);
+  // Convert Seconds to Hours, Minutes and Seconds
+  let hours = Math.floor(data.longestTime / 3600);
+  let minutes = Math.floor((data.longestTime % 3600) / 60);
+  let seconds = Math.floor((data.longestTime % 3600) % 60);
+
+  const longestTimeText = document.getElementById("longestTime");
+  const vehicleNoText = document.getElementById("vehicleNo");
+
+  longestTimeText.innerHTML = `${hours}h ${minutes}m ${seconds}s`;
+  vehicleNoText.innerHTML = `${data.pathTimes.length}`
+  
+  console.table(data.pathTimes);
 });
 
 
@@ -259,6 +263,7 @@ async function drawRoutedLine(pathTimes) {
       const path = pathTime.path;
       const routedCoords = [];
 
+      // Get the route geometry for each pair of vertices
       for (let i = 0; i < path.length - 1; i++) {
         const source = allLocations[path[i]];
         const destination = allLocations[path[i + 1]];
@@ -272,6 +277,7 @@ async function drawRoutedLine(pathTimes) {
       const sourceId = `route-source-${index}`;
       const layerId = `route-layer-${index}`;
 
+      // Add the route to the map
       map.addSource(sourceId, {
         type: "geojson",
         data: {
@@ -283,6 +289,7 @@ async function drawRoutedLine(pathTimes) {
         },
       });
 
+      // Add the route layer to the map
       map.addLayer({
         id: layerId,
         type: "line",
@@ -299,6 +306,7 @@ async function drawRoutedLine(pathTimes) {
     const durations = await getDurations();
     const result = kruskalsAlgorithm(durations);
 
+    // Get the route geometry for each pair of vertices
     result.mst.forEach(async (edge, index) => {
       const source = allLocations[edge.u];
       const destination = allLocations[edge.v];
@@ -311,6 +319,7 @@ async function drawRoutedLine(pathTimes) {
       const sourceId = `route-source-${index}`;
       const layerId = `route-layer-${index}`;
 
+      // Add the route to the map
       map.addSource(sourceId, {
         type: "geojson",
         data: {
@@ -322,6 +331,7 @@ async function drawRoutedLine(pathTimes) {
         },
       });
 
+      // Add the route layer to the map
       map.addLayer({
         id: layerId,
         type: "line",
@@ -347,6 +357,7 @@ async function drawSimpleLine(pathTimes) {
       const sourceId = `route-source-${index}`;
       const layerId = `route-layer-${index}`;
 
+      // Add the route to the map
       map.addSource(sourceId, {
         type: "geojson",
         data: {
@@ -358,6 +369,7 @@ async function drawSimpleLine(pathTimes) {
         },
       });
 
+      // Add the route layer to the map
       map.addLayer({
         id: layerId,
         type: "line",
@@ -382,6 +394,7 @@ async function drawSimpleLine(pathTimes) {
       const sourceId = `route-source-${index}`;
       const layerId = `route-layer-${index}`;
 
+      // Add the route to the map
       map.addSource(sourceId, {
         type: "geojson",
         data: {
@@ -393,6 +406,7 @@ async function drawSimpleLine(pathTimes) {
         },
       });
 
+      // Add the route layer to the map
       map.addLayer({
         id: layerId,
         type: "line",
@@ -411,6 +425,7 @@ const routedButton = document.getElementById("routedButton");
 const p2pButton = document.getElementById("p2pButton");
 const vhlPathButton = document.getElementById("vhlPathButton");
 
+// Event Listeners for the buttons
 straightButton.addEventListener("click", (button) => {
   mode = "simple";
   routedButton.classList.remove("activeButtonA");

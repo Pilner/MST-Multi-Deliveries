@@ -14,7 +14,6 @@ const dataParam = urlParams.get('data');
 
 // Clean URL from excess values
 function removeEmpty(string) {
-  console.log(string);  
   return string.replace(/,""/g, '');
 }
 // Fix URL to be readable by the program
@@ -155,19 +154,26 @@ function kruskalsAlgorithm(durations) {
 
   // Perform Kruskal's algorithm to find the MST
   for (const edge of edges) {
-    const uParent = findParent(parent, edge.u);
-    const vParent = findParent(parent, edge.v);
+    const sourceParent = findParent(parent, edge.u);
+    const destParent = findParent(parent, edge.v);
 
     // If including this edge does not form a cycle, add it to the MST
-    if (uParent !== vParent) {
+    if (sourceParent !== destParent) {
       minimumSpanningTree.push(edge);
       totalWeight += edge.weight;
-      union(parent, rank, uParent, vParent);
+      union(parent, rank, sourceParent, destParent);
     }
   }
 
   return { mst: minimumSpanningTree, weight: totalWeight };
 }
+
+// Check output of Kruskal's Algorithm
+getDurations().then((durations) => {
+  const result = kruskalsAlgorithm(durations);
+  console.log(durations)
+  console.log(result);
+});
 
 // Fetch the durations matrix from the Mapbox Directions API
 async function getDurations() {
@@ -196,6 +202,7 @@ async function getLongestTime() {
       pathTimes.push({path: currentPath, time: currentWeight});
     }
 
+    // Find the longest path/time
     if (currentWeight > maxWeight) {
       maxWeight = currentWeight;
     }
@@ -233,7 +240,7 @@ getLongestTime().then((data) => {
   longestTimeText.innerHTML = `${hours}h ${minutes}m ${seconds}s`;
   vehicleNoText.innerHTML = `${data.pathTimes.length}`
   
-  console.table(data.pathTimes);
+  
 });
 
 

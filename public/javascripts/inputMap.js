@@ -77,6 +77,7 @@ map.on("click", (e) => {
 					inputs[index].value = `${point[0]}, ${point[1]}`;
 				}
 			}
+			console.log(`Delivery: ${point}`);
 		}
 		
 		((marker) => {
@@ -181,7 +182,6 @@ document.addEventListener('DOMContentLoaded', () => {
 				selector.setAttribute("data-selected", "true");
 				mode = selector.getAttribute("data-mode");
 				index = (selector.getAttribute("data-index") - 1) || 0;
-				console.log(index);
 				selectors.forEach((check) => {
 					if (check !== selector) {
 						check.setAttribute("data-selected", "false");
@@ -192,7 +192,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		// required = [document.querySelector("#warehouse"), document.querySelectorAll(".delivery")]
 	
 	});
-
 
 });
   
